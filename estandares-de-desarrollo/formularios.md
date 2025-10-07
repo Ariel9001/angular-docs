@@ -4,6 +4,10 @@
 
 Para la creación de formularios en Angular se debe utilizar `FormGroup`, `FormControl` y `FormArray` de la librería `@angular/forms`.
 
+No se debe definir una interfaz para los formularios con `FormGroup, pero si se recomienda para los formularios complejos, como lo serian los formularios anidados o los formularios con arrays.
+
+Tampoco se debe usar funciones auxiliares para generar formularios, se deberan definir directamente en la clase del componente si el caso lo permite.
+
 ```typescript
 export class Component {
 
@@ -11,7 +15,7 @@ export class Component {
     formGroup = new FormGroup({
         name: new FormControl<string>('', {nonNullable: true}),
         age: new FormControl<number | null>(null),
-        email: new FormControl<string | null>(null),
+        email: new FormControl<string | null>(null),|
     });
     formArray = new FormArray<FormControl<string>>([]);
 
