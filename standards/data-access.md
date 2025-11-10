@@ -52,17 +52,10 @@ messageSettings$ = new ListService(
   }
 );
 
-// Effect para recargar cuando cambien inputs
-constructor() {
-  effect(() => {
-    const code = this.collectionCode();
-    untracked(() => {
-      if (!code) return;
-      this.messageSettings$.setParams({ code, event_module: this.eventModule() });
-      this.messageSettings$.list();
-    });
-  });
+ngOnInit() {
+  this.messageSettings$.list();  // Cargar datos
 }
+
 ```
 
 ```html
@@ -179,15 +172,7 @@ products$ = new PaginatedListService(
   {
     size: 10,
     synchronize_pagination: true,  // Actualiza desde la respuesta del servidor
-    mapFn: (res, pg) => {
-      pg.set({
-        page: res.pageNum,
-        size: res.pageSize,
-        pages: res.pages,
-        records: res.total
-      });
-      return res.data;
-    }
+    mapFn: (res) => res.data;
   }
 );
 ```
@@ -248,40 +233,6 @@ const pg = this.service.getPaginated();
 const canGoNext = pg.page < pg.pages;
 const canGoPrev = pg.page > 1;
 ```
-
-### Con scroll infinito
-
-```typescript
-itemsService = new PaginatedListService(
-  {
-    destroyRef: this.destroyRef,
-    list$: itemsRepository.list.bind(itemsRepository)
-  },
-  {
-    size: 15,
-    merge_results: true,           // Acumula resultados de todas las páginas
-    synchronize_pagination: true
-  }
-);
-
-onScroll(event: Event) {
-  const element = event.target as HTMLElement;
-  const threshold = 100;
-  
-  const isNearBottom = 
-    element.scrollHeight - element.scrollTop - element.clientHeight < threshold;
-  
-  if (isNearBottom && !this.itemsService.loading() && this.hasMorePages()) {
-    this.itemsService.nextPage(null);
-  }
-}
-
-hasMorePages(): boolean {
-  const pg = this.itemsService.getPaginated();
-  return pg.page < pg.pages;
-}
-```
-
 ---
 
 ## Configuración completa
@@ -319,7 +270,9 @@ interface PaginatedListModel.Config<T, R = T> {
 
 ```typescript
 // 1. Siempre inyectar DestroyRef
-private readonly destroyRef = inject(DestroyRef);
+constructor(
+ private readonly destroyRef: DestroyRef
+) { }
 
 // 2. Llamar a list() después de setParams()
 this.service.setParams({ filter: 'active' });
@@ -338,23 +291,20 @@ mapFn: (res) => res.data || []
 // 1. No configurar parámetros sin llamar list()
 this.service.setParams({ filter: 'active' });  // ❌ Falta list()
 
-// 2. No usar PaginatedListService para listas pequeñas
-// Si tienes < 50 items, usa ListService
-
-// 3. No manipular directamente data() o loading()
+// 2. No manipular directamente data() o loading()
 this.service.data.set([]);  // ❌ Son readonly
 
-// 4. No mezclar page/size con setParams en PaginatedListService
+// 3. No mezclar page/size con setParams en PaginatedListService
 this.service.setParams({ page: 2, size: 20 });  // ❌ Usa updatePaginated()
 ```
 
 ---
 
-## Troubleshooting
+## Errores comunes y soluciones
 
 | Problema | Solución |
 |----------|----------|
 | Lista no se actualiza | Llamar a `list()` después de `setParams()` |
 | Typeahead no funciona | Configurar `{ typeahead: 'campo' }` y emitir con `typeahead$.next()` |
 | Paginación no sincroniza | Activar `synchronize_pagination: true` y actualizar en `mapFn` |
-| Errores no se muestran | Pasar `notificationService` en config |
+| Errores no se muestran | Pasar `notificationService` en config unas vez injectado en el constructor |
