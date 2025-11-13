@@ -156,8 +156,21 @@ downPayment$ = new PaginatedListService(
 );
 
 ngOnInit() {
-  this.downPayment$.list();
+  this.fetchData();
 }
+
+fetchData(rs: boolean = true): void {
+    const { description, enabled } = this.filterForm.getRawValue();
+
+    const params: Partial<IAdditionalInformationModel.ListParams> = {};
+
+    if (description) params.description = description.trim();
+    if (enabled != null) params.enabled = enabled;
+
+    this.additionalInformations$.setParams(params);
+    this.additionalInformations$.list(rs);
+  }
+
 ```
 
 ### Uso en tabla con paginación
@@ -208,7 +221,7 @@ products$ = new PaginatedListService(
 
 <app-pagination
   [signal-pagination]="products$.signalPaginated"
-  (change-signal)="products$.list(false)"
+  (change-signal)="fetchData(false)"
   [current]="products$.signalPaginated().page"
   [total]="products$.signalPaginated().pages"
 />
